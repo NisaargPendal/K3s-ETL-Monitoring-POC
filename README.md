@@ -35,13 +35,3 @@ This project simulates a real-world enterprise data flow:
 
 ## 🛠️ How to View
 For a deep dive into the implementation and usage, refer to the **[Project Structure Map](docs/project_structure.md)** and the **[Architecture Documentation](docs/architecture.md)**.
-
----
-
-## 👨‍💻 Resume Ready
-This POC highlights skills in:
-- **Kubernetes (K3s)** & **Docker**
-- **Data Engineering / ETL** (Python, SQL)
-- **SRE / Observability** (Prometheus, Grafana, Loki, Fluent Bit)
-- **Database Management** (PostgreSQL, MSSQL)
-- **Platform Engineering** (RBAC, PVC, Namespacing)

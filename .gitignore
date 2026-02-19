@@ -18,4 +18,4 @@ external-db/pgdata/
 # OS Files
 .DS_Store
 Thmubs.db
-k8s/secrets.yaml.bak
+k8s/secrets.yaml
