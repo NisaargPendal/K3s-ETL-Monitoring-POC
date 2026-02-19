@@ -1,0 +1,17 @@
+---
+# NodePort Service — exposes internal Postgres on a host port
+# This simulates what Traefik TCP IngressRoute does in production
+# Connect from host: psql -h localhost -p 30543 -U int_user -d internal_db
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-public
+  namespace: etl-poc
+spec:
+  selector:
+    app: postgres
+  type: NodePort
+  ports:
+    - port: 5432
+      targetPort: 5432
+      nodePort: 30543   # Accessible on localhost:30543 from your machine

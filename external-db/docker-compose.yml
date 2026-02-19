@@ -1,0 +1,22 @@
+services:
+  external-postgres:
+    image: postgres:15
+    container_name: external-db
+    environment:
+      POSTGRES_DB: external_db
+      POSTGRES_USER: ext_user
+      POSTGRES_PASSWORD: ext_password
+    ports:
+      - "5433:5432"   # Exposed on host port 5433 (so it doesn't clash with any local postgres)
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - external_db_data:/var/lib/postgresql/data
+    networks:
+      - external-net
+
+networks:
+  external-net:
+    driver: bridge
+
+volumes:
+  external_db_data:

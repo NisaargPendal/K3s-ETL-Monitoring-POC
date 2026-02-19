@@ -1,0 +1,88 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etl-puller
+  namespace: etl-poc
+spec:
+  # Runs every 5 minutes — change to your preferred schedule
+  # Format: minute hour day-of-month month day-of-week
+  schedule: "*/5 * * * *"
+
+  # Keep last 3 successful and 1 failed job for log inspection
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+
+  # If a job is still running when the next schedule hits, skip the new one
+  concurrencyPolicy: Forbid
+
+  jobTemplate:
+    spec:
+      # Retry up to 2 times if the pod fails
+      backoffLimit: 2
+
+      template:
+        metadata:
+          labels:
+            app: etl-puller
+        spec:
+          restartPolicy: OnFailure
+
+          containers:
+            - name: etl-app
+              image: etl-app:v2
+              imagePullPolicy: Never   # Use local image imported into K3s
+
+              env:
+                # ── External DB ──────────────────────────────────────
+                - name: EXT_DB_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: external-db-creds
+                      key: host
+                - name: EXT_DB_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: external-db-creds
+                      key: port
+                - name: EXT_DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: external-db-creds
+                      key: db
+                - name: EXT_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: external-db-creds
+                      key: user
+                - name: EXT_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: external-db-creds
+                      key: password
+
+                # ── Internal DB ──────────────────────────────────────
+                - name: INT_DB_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: internal-db-creds
+                      key: host
+                - name: INT_DB_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: internal-db-creds
+                      key: port
+                - name: INT_DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: internal-db-creds
+                      key: db
+                - name: INT_DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: internal-db-creds
+                      key: user
+                - name: INT_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: internal-db-creds
+                      key: password

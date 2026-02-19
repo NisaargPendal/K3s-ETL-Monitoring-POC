@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K3s ETL POC Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'forest' });</script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 40px;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>System Architecture: Top-Down View</h1>
+
+        <div class="mermaid">
+            graph TD
+            subgraph Host ["Level 0: Host Machine (Your Laptop)"]
+            direction TB
+
+            subgraph Runtimes ["Level 1: Runtimes & Infrastructure"]
+            direction LR
+            Docker["Docker Engine<br />(External DB Container)"]
+            K3sSvc["K3s System Service<br />(Cluster Brain)"]
+            end
+
+            subgraph Cluster ["Level 2: K3s Virtual Cluster"]
+            direction TB
+            Node["K3s Single Node"]
+
+            subgraph Namespaces ["Level 3: Resource Isolation"]
+            subgraph etl_poc ["Namespace: etl-poc"]
+            direction TB
+            MSSQL_Comp["MSSQL Pod"]
+            ETL_Comp["ETL Puller (CronJob)"]
+            Storage[("MSSQL Data (PVC)")]
+            MSSQL_Comp --- Storage
+            end
+
+            subgraph kube_system ["Namespace: kube-system"]
+            Logging["Fluent Bit (Logging)"]
+            Monitoring["Monitoring Layer<br />(P&L&G Stack)"]
+            Metrics["Kube-State-Metrics"]
+            Networking["CoreDNS / Traefik"]
+            end
+            end
+            end
+
+            ExternalDB[("Postgres DB<br />(External Source)")]
+            Docker --- ExternalDB
+            Browser["User Browser<br />(Grafana UI)"]
+            end
+
+            ETL_Comp -.->|Pull| ExternalDB
+            ETL_Comp -.->|Push| MSSQL_Comp
+            Logging ===>|Push logs| Monitoring
+            Monitoring -.->|Scrape| Metrics
+            Browser -.->|View Live| Monitoring
+        </div>
+
+        <h2>Resource Breakdown</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Namespace</th>
+                    <th>Statefulness</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>ETL App</td>
+                    <td>etl-poc</td>
+                    <td>Stateless</td>
+                    <td>Processes and filters data.</td>
+                </tr>
+                <tr>
+                    <td>MSSQL</td>
+                    <td>etl-poc</td>
+                    <td>Stateful</td>
+                    <td>Internal destination database.</td>
+                </tr>
+                <tr>
+                    <td>Prometheus</td>
+                    <td>kube-system</td>
+                    <td>Stateful</td>
+                    <td>Metric aggregation & storage.</td>
+                </tr>
+                <tr>
+                    <td>Loki</td>
+                    <td>kube-system</td>
+                    <td>Stateful</td>
+                    <td>Log aggregation & storage.</td>
+                </tr>
+                <tr>
+                    <td>Grafana</td>
+                    <td>kube-system</td>
+                    <td>Stateless</td>
+                    <td>Live Visualization & Dashboards.</td>
+                </tr>
+                <tr>
+                    <td>Fluent Bit</td>
+                    <td>kube-system</td>
+                    <td>Stateless</td>
+                    <td>Collects container logs.</td>
+                </tr>
+                <tr>
+                    <td>KSM</td>
+                    <td>kube-system</td>
+                    <td>Stateless</td>
+                    <td>K8s cluster state metrics.</td>
+                </tr>
+                <tr>
+                    <td>External DB</td>
+                    <td>Docker</td>
+                    <td>STATEFUL</td>
+                    <td>Source data simulation.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+
+</html>

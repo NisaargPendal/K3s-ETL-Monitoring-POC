@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mssql-exporter
+  namespace: etl-poc
+  labels:
+    app: mssql-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mssql-exporter
+  template:
+    metadata:
+      labels:
+        app: mssql-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: mssql-exporter
+        image: awaragi/prometheus-mssql-exporter:v1.2.0
+        ports:
+        - containerPort: 80
+        env:
+        - name: Server
+          value: "mssql-svc"
+        - name: Database
+          value: "internal_db"
+        - name: User
+          valueFrom:
+            secretKeyRef:
+              name: internal-db-creds
+              key: user
+        - name: Password
+          valueFrom:
+            secretKeyRef:
+              name: internal-db-creds
+              key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mssql-exporter
+  namespace: etl-poc
+  labels:
+    app: mssql-exporter
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "80"
+spec:
+  selector:
+    app: mssql-exporter
+  ports:
+  - port: 80
+    targetPort: 80
+    name: metrics

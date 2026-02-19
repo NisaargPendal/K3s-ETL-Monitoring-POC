@@ -1,0 +1,44 @@
+---
+# One-time init Job: creates the internal_db database in MSSQL
+# Run this ONCE after MSSQL pod is Running and ready
+# It uses sqlcmd (built into the MSSQL image) to create the DB
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mssql-init-db
+  namespace: etl-poc
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mssql-init
+          image: mcr.microsoft.com/mssql/server:2022-latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "Waiting for MSSQL to be ready..."
+              for i in $(seq 1 30); do
+                /opt/mssql-tools18/bin/sqlcmd -S mssql-svc -U sa -P "$MSSQL_SA_PASSWORD" -Q "SELECT 1" -No && break
+                echo "Attempt $i failed, retrying in 5s..."
+                sleep 5
+              done
+              echo "Creating database internal_db..."
+              /opt/mssql-tools18/bin/sqlcmd -S mssql-svc -U sa -P "$MSSQL_SA_PASSWORD" -No -Q "
+                IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'internal_db')
+                BEGIN
+                  CREATE DATABASE internal_db;
+                  PRINT 'Database internal_db created.';
+                END
+                ELSE
+                  PRINT 'Database internal_db already exists.';
+              "
+              echo "Done."
+          env:
+            - name: MSSQL_SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: internal-db-creds
+                  key: password
