@@ -1,5 +1,4 @@
 # Kubernetes Secrets (CRITICAL: DO NOT PUSH)
-k8s/secrets.yaml
 
 # Local Python Environment
 __pycache__/
@@ -19,3 +18,4 @@ external-db/pgdata/
 # OS Files
 .DS_Store
 Thmubs.db
+k8s/secrets.yaml.bak
